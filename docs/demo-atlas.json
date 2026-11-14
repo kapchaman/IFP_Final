@@ -1,0 +1,134 @@
+{
+  "Version": 1,
+  "Concepts": [
+    {
+      "Id": "ff89ce01-2120-5a94-ac5b-c2d0803a1e26",
+      "Title": "Memory Palace",
+      "Description": "A personal knowledge atlas that connects ideas across subjects.",
+      "Category": "Learning",
+      "CreatedAtUtc": "2026-11-14T10:00:00Z",
+      "UpdatedAtUtc": "2026-11-14T10:00:00Z"
+    },
+    {
+      "Id": "5b53d3b8-ae97-5876-a703-4b248b9b23b4",
+      "Title": "Active Recall",
+      "Description": "Retrieve an answer before looking it up to practise remembering.",
+      "Category": "Learning",
+      "CreatedAtUtc": "2026-11-14T10:00:00Z",
+      "UpdatedAtUtc": "2026-11-14T10:00:00Z"
+    },
+    {
+      "Id": "28c9cf23-3a23-53b3-90af-92194a38e707",
+      "Title": "Spaced Repetition",
+      "Description": "Revisit material at increasing intervals.",
+      "Category": "Learning",
+      "CreatedAtUtc": "2026-11-14T10:00:00Z",
+      "UpdatedAtUtc": "2026-11-14T10:00:00Z"
+    },
+    {
+      "Id": "16ee5f7f-bc69-5384-b059-2ecc72d18b9f",
+      "Title": "Graph Theory",
+      "Description": "Study vertices, edges, and the relationships they represent.",
+      "Category": "Mathematics",
+      "CreatedAtUtc": "2026-11-14T10:00:00Z",
+      "UpdatedAtUtc": "2026-11-14T10:00:00Z"
+    },
+    {
+      "Id": "e452f1c0-6625-5e6c-afdb-a2cd664c49bf",
+      "Title": "Breadth-First Search",
+      "Description": "Explore a graph by layers to find a shortest unweighted path.",
+      "Category": "Computer Science",
+      "CreatedAtUtc": "2026-11-14T10:00:00Z",
+      "UpdatedAtUtc": "2026-11-14T10:00:00Z"
+    },
+    {
+      "Id": "c39c2f21-2668-5715-ab5e-46f2933a3c56",
+      "Title": "Blazor Server",
+      "Description": "Run C# UI interactions on the server and update the browser through a circuit.",
+      "Category": "Engineering",
+      "CreatedAtUtc": "2026-11-14T10:00:00Z",
+      "UpdatedAtUtc": "2026-11-14T10:00:00Z"
+    },
+    {
+      "Id": "05c024a5-1658-55e3-b269-6ba569c405e8",
+      "Title": "Entity Framework Core",
+      "Description": "Map domain objects to database records and query them using LINQ.",
+      "Category": "Engineering",
+      "CreatedAtUtc": "2026-11-14T10:00:00Z",
+      "UpdatedAtUtc": "2026-11-14T10:00:00Z"
+    },
+    {
+      "Id": "e5c016ab-016f-51bb-baf4-4931c8ccc445",
+      "Title": "SQLite",
+      "Description": "A portable database stored in a local file.",
+      "Category": "Engineering",
+      "CreatedAtUtc": "2026-11-14T10:00:00Z",
+      "UpdatedAtUtc": "2026-11-14T10:00:00Z"
+    }
+  ],
+  "Connections": [
+    {
+      "Id": "3694aaba-ba1f-5dff-a293-dbec520b4500",
+      "SourceConceptId": "5b53d3b8-ae97-5876-a703-4b248b9b23b4",
+      "TargetConceptId": "ff89ce01-2120-5a94-ac5b-c2d0803a1e26",
+      "Relationship": 2,
+      "Note": "Retrieval helps you use the ideas in your atlas."
+    },
+    {
+      "Id": "b6bf79f6-3e36-581e-9f53-b9ee8f157859",
+      "SourceConceptId": "28c9cf23-3a23-53b3-90af-92194a38e707",
+      "TargetConceptId": "5b53d3b8-ae97-5876-a703-4b248b9b23b4",
+      "Relationship": 2,
+      "Note": "Scheduling creates repeated opportunities for retrieval."
+    },
+    {
+      "Id": "613df8cb-cf55-54ba-b8fc-213a63e5f6ce",
+      "SourceConceptId": "16ee5f7f-bc69-5384-b059-2ecc72d18b9f",
+      "TargetConceptId": "ff89ce01-2120-5a94-ac5b-c2d0803a1e26",
+      "Relationship": 1,
+      "Note": "Concepts form vertices and relationships form edges."
+    },
+    {
+      "Id": "6cd6c91a-702c-514f-ac73-a0d6f8af28cf",
+      "SourceConceptId": "e452f1c0-6625-5e6c-afdb-a2cd664c49bf",
+      "TargetConceptId": "16ee5f7f-bc69-5384-b059-2ecc72d18b9f",
+      "Relationship": 4,
+      "Note": "BFS is a graph traversal algorithm."
+    },
+    {
+      "Id": "9b5f052c-2c90-5dce-9957-0ce027fe01c9",
+      "SourceConceptId": "c39c2f21-2668-5715-ab5e-46f2933a3c56",
+      "TargetConceptId": "ff89ce01-2120-5a94-ac5b-c2d0803a1e26",
+      "Relationship": 2,
+      "Note": "The interactive UI explores your knowledge graph."
+    },
+    {
+      "Id": "43181a88-7c9d-5577-980f-e9baaa20a0eb",
+      "SourceConceptId": "05c024a5-1658-55e3-b269-6ba569c405e8",
+      "TargetConceptId": "e5c016ab-016f-51bb-baf4-4931c8ccc445",
+      "Relationship": 2,
+      "Note": "EF Core reads and writes the local database."
+    },
+    {
+      "Id": "f88f122c-da3f-5f05-aca9-e44d2d9a26f4",
+      "SourceConceptId": "c39c2f21-2668-5715-ab5e-46f2933a3c56",
+      "TargetConceptId": "05c024a5-1658-55e3-b269-6ba569c405e8",
+      "Relationship": 0,
+      "Note": "UI actions call services that persist domain entities."
+    },
+    {
+      "Id": "7aaa3273-9d36-5d19-8aeb-266d70a0076b",
+      "SourceConceptId": "e452f1c0-6625-5e6c-afdb-a2cd664c49bf",
+      "TargetConceptId": "ff89ce01-2120-5a94-ac5b-c2d0803a1e26",
+      "Relationship": 2,
+      "Note": "Find a shortest chain between concepts."
+    },
+    {
+      "Id": "1b474c63-e13d-5e65-8481-2a5220b33c87",
+      "SourceConceptId": "e5c016ab-016f-51bb-baf4-4931c8ccc445",
+      "TargetConceptId": "ff89ce01-2120-5a94-ac5b-c2d0803a1e26",
+      "Relationship": 2,
+      "Note": "Local persistence keeps ideas between sessions."
+    }
+  ]
+}
