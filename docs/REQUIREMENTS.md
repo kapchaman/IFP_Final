@@ -12,7 +12,7 @@ The final-project rubric contains 20 extended criteria, each worth 5% of the ove
 |---|---|---|---|---|
 | 1 | Code Structure and Design | 5% | Domain, Data, Services, State, and Components directories; `IConceptService` abstraction, DI, separate graph algorithm | Layered structure within one application, rather than separate deployment services |
 | 2 | Component Reusability | 5% | `Modal`, `ConceptEditor`, `ConnectionEditor`, `KnowledgeGraph`, and `ConceptDetails`; typed parameters, callbacks, cascading state | Browser interaction scenarios are provided separately |
-| 3 | Cross-Platform Compatibility | 5% | .NET 10, SQLite, OS-independent paths, browser client; CI matrix for Windows/macOS/Linux | Local execution confirmed on macOS; other platforms require completed CI/manual runs |
+| 3 | Cross-Platform Compatibility | 5% | .NET 10, SQLite, OS-independent paths, browser client; CI matrix for Windows/macOS/Linux | .NET build and assertion runners confirmed on Windows and macOS; Linux and browser/device checks remain pending |
 | 4 | State Management | 5% | Scoped `AtlasState`, cached snapshot/filter results, selected concept, state event and disposal cleanup | Core checks verify selection/filter consistency; cross-tab refresh is explicit |
 | 5 | UI Design | 5% | Consistent dark workspace, graph/library views, category color coding, summary statistics, contextual detail panel | Visual quality still benefits from review on physical displays |
 | 6 | User Experience | 5% | Search, empty-result recovery, confirmation dialogs, status feedback, labeled inputs, keyboard controls, map pan/zoom and node drag | Manual assistive-technology testing remains on the checklist |
@@ -23,7 +23,7 @@ The final-project rubric contains 20 extended criteria, each worth 5% of the ove
 | 11 | Efficiency | 5% | No-tracking reads, split detail queries, bulk deletion of incident edges, bounded graph rendering | No latency benchmark or production performance target is claimed |
 | 12 | Scalability | 5% | Short-lived contexts, indexed relations/categories/titles, service contract supporting future storage changes | In-memory personal-atlas snapshot; pagination and load testing are future work |
 | 13 | Resource Utilization | 5% | Cached derived state, coordinates per graph update, 60-node rendering limit, disposed contexts/subscriptions, revoked download URLs | CPU/memory profiling has not been completed |
-| 14 | Testing Coverage | 5% | 18 core assertions and 29 real-SQLite assertions pass on the cached dependency baseline; Playwright workflow scenarios included | 47 assertions are not a measured code-coverage percentage; updated packages need revalidation |
+| 14 | Testing Coverage | 5% | 18 core assertions and 29 real-SQLite assertions pass on Windows and macOS cached package assets; Playwright workflow scenarios included | 47 assertions are not a measured code-coverage percentage; fresh restore, dependency audit, and browser scenarios remain pending |
 | 15 | Quality Assurance | 5% | Reproducible commands, assertion failure exit codes, manual matrix and device checklist in `QA.md` | Browser/physical-device checks remain explicitly marked pending |
 | 16 | Documentation | 5% | Setup guide, user walkthrough, architecture diagrams, service contracts, backup example, QA report, defense script | Documentation reflects local-workspace scope and actual execution evidence |
 | 17 | Innovation | 5% | Knowledge relationships combine semantic direction with direction-independent discovery; map and library support different exploration styles | Educational benefit is a design hypothesis, not a measured research result |
@@ -33,6 +33,8 @@ The final-project rubric contains 20 extended criteria, each worth 5% of the ove
 | | **Total** | **100%** | | |
 
 ## Submission and defense checklist
+
+See [SUBMISSION.md](SUBMISSION.md) for the exact project files to upload and packaging guidance.
 
 - [ ] Restore the final dependencies and pass the warning-as-error build and dependency audit.
 - [ ] Repeat both executable runners against the resolved final package graph.

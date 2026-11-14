@@ -2,8 +2,10 @@
 
 ## Automated execution results
 
-**Environment:** macOS arm64, .NET SDK 10.0.401.
-**Validation date:** 14 November 2026.
+**Recorded baseline environment:** macOS arm64, .NET SDK 10.0.401.
+**Baseline validation date:** 14 November 2026.
+
+**Additional local verification:** Windows x64, .NET SDK 10.0.404, 14 November 2026. The current solution built with `--no-restore --warnaserror` (zero warnings, zero errors); the core and SQLite runners passed all 18 and 29 assertions. This reused the already restored local package assets. A fresh restore and vulnerability audit could not complete because this environment cannot reach `api.nuget.org` (NU1301), so the updated dependency graph is not yet fully qualified. An HTTP startup probe was also blocked by this environment's inaccessible Windows Data Protection key and Event Log permissions; that probe did not establish a normal user-machine runtime result.
 
 Both executable runners were run successfully in this workspace:
 
@@ -12,6 +14,8 @@ Both executable runners were run successfully in this workspace:
 | `MemoryPalace.CoreChecks` | 18 passed | `18 core checks passed.` |
 | `MemoryPalace.Tests` | 29 passed | `29 SQLite integration checks passed.` |
 | **Total** | **47 passed** | No failed assertions |
+
+The additional Windows run confirms these runners pass on Windows using the cached restore assets as well. It does not replace a fresh package restore or a normal interactive browser run.
 
 The SQLite runner uses the actual `ConceptService`, EF Core, and a temporary SQLite database rather than a mocked database provider. Its cleanup executes in a `finally` block. The core runner links the domain, graph, service interface, and state sources directly and has no external package dependencies. These are executable assertion runners; `dotnet test` does not execute them, and 47 passing assertions do not imply a particular line-coverage percentage.
 
@@ -92,7 +96,7 @@ CI performs restore, a warning-as-error build, and both runners on Windows, macO
 
 Playwright scenarios cover creating concepts, creating a typed relationship with a note, discovering a path, editing, reloading persistent data, navigating the library, deleting a connected concept, checking remaining integrity, and cleaning up. A second scenario checks Escape dismissal and horizontal overflow. The configuration targets Chromium, Firefox, WebKit, and a mobile WebKit viewport.
 
-**Execution status: not run in this session.** Browser automation is separate from the 47 passing .NET assertions. Follow the README commands with a separate test instance at `http://localhost:5100`.
+**Execution status: not run.** Playwright is not installed in this workspace, and package access is unavailable. Browser automation is separate from the 47 passing .NET assertions. Follow the README commands with a separate test instance at `http://localhost:5100` after installing the npm package and browsers.
 
 ## Manual test matrix
 

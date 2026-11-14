@@ -104,6 +104,7 @@ EF Core SQLite is pinned to 10.0.12 and the SQLite native bundle to 3.0.5. The d
 
 ## Submission materials
 
+- [What to submit and final checklist](docs/SUBMISSION.md)
 - [Architecture and service contracts](docs/ARCHITECTURE.md)
 - [All 20 assessment criteria](docs/REQUIREMENTS.md)
 - [QA evidence and device checklist](docs/QA.md)
