@@ -1,0 +1,18 @@
+name: Build and checks
+on: [push, pull_request]
+jobs:
+  checks:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore MemoryPalace.sln
+      - run: dotnet build MemoryPalace.sln --no-restore --warnaserror
+      - run: dotnet list MemoryPalace.sln package --include-transitive --vulnerable
+      - run: dotnet run --project MemoryPalace.CoreChecks --no-build
+      - run: dotnet run --project MemoryPalace.Tests --no-build
