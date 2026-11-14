@@ -1,0 +1,15 @@
+@inject IJSRuntime JS
+<dialog @ref="dialog" class="create-modal" aria-labelledby="dialog-title" @oncancel="Close" @oncancel:preventDefault="true">
+    <div class="modal-heading"><h2 id="dialog-title">@Title</h2><button type="button" class="icon-action" aria-label="Close dialog" @onclick="Close">×</button></div>
+    @ChildContent
+</dialog>
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback Close { get; set; }
+    private ElementReference dialog;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await JS.InvokeVoidAsync("memoryPalace.openDialog", dialog);
+    }
+}

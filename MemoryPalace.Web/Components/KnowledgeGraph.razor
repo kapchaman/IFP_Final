@@ -1,0 +1,46 @@
+@using System.Globalization
+@using MemoryPalace.Web.Domain.Entities
+<div class="graph-canvas" role="group" aria-label="Knowledge map. Select a concept to explore its connections.">
+    <svg class="graph-lines" viewBox="0 0 800 460" preserveAspectRatio="none" aria-hidden="true">
+        <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#70bdb1" /></marker></defs>
+        @foreach (var edge in edges)
+        {
+            var a = positions[edge.SourceConceptId];
+            var b = positions[edge.TargetConceptId];
+            <line x1="@N(a.X * 8)" y1="@N(a.Y * 4.6)" x2="@N(b.X * 8)" y2="@N(b.Y * 4.6)" class="graph-edge @(OnPath(edge) ? "path-edge" : "")" marker-end="url(#arrow)" />
+        }
+    </svg>
+    @foreach (var concept in Concepts)
+    {
+        var pos = positions[concept.Id];
+        <button class="graph-node @(SelectedId == concept.Id ? "selected" : "") @(Path.Contains(concept.Id) ? "path-node" : "")" style="left:@N(pos.X)%;top:@N(pos.Y)%" aria-pressed="@(SelectedId == concept.Id)" @onclick="() => Select.InvokeAsync(concept.Id)">
+            <span class="node-core"></span><span class="node-title">@concept.Title</span><span class="node-category">@concept.Category</span>
+        </button>
+    }
+</div>
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<Concept> Concepts { get; set; } = Array.Empty<Concept>();
+    [Parameter] public Guid? SelectedId { get; set; }
+    [Parameter] public IReadOnlyList<Guid> Path { get; set; } = Array.Empty<Guid>();
+    [Parameter] public EventCallback<Guid> Select { get; set; }
+    private Dictionary<Guid, (double X, double Y)> positions = new();
+    private List<Connection> edges = new();
+    protected override void OnParametersSet()
+    {
+        positions = Concepts.Select((x, i) => (x.Id, Position(i, Concepts.Count))).ToDictionary(x => x.Id, x => x.Item2);
+        edges = Concepts.SelectMany(x => x.OutgoingConnections).Where(x => positions.ContainsKey(x.SourceConceptId) && positions.ContainsKey(x.TargetConceptId)).ToList();
+    }
+    private bool OnPath(Connection edge)
+    {
+        for (var i = 1; i < Path.Count; i++)
+            if ((Path[i - 1] == edge.SourceConceptId && Path[i] == edge.TargetConceptId) || (Path[i] == edge.SourceConceptId && Path[i - 1] == edge.TargetConceptId)) return true;
+        return false;
+    }
+    private static (double X, double Y) Position(int index, int count)
+    {
+        var angle = 2 * Math.PI * index / Math.Max(count, 1) - Math.PI / 2;
+        var radius = count == 1 ? 0 : 34;
+        return (50 + radius * Math.Cos(angle), 50 + radius * Math.Sin(angle));
+    }
+    private static string N(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+}

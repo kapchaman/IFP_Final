@@ -1,0 +1,31 @@
+@if (Atlas.Selected is { } selected)
+{
+    <div class="detail-top"><div class="eyebrow">CONCEPT EXPLORER</div><button class="icon-action danger" disabled="@Busy" aria-label="Delete selected concept" @onclick="Delete">×</button></div>
+    <span class="category-pill">@selected.Category</span><h2 class="detail-title">@selected.Title</h2><p class="detail-description">@(string.IsNullOrWhiteSpace(selected.Description) ? "No description yet. Edit this concept to add context." : selected.Description)</p>
+    <div class="detail-actions"><button class="secondary-action" disabled="@Busy" @onclick="Edit">Edit</button><button class="primary-action" disabled="@(Busy || Atlas.Concepts.Count < 2)" @onclick="Connect">＋ Connect</button></div>
+    <div class="detail-divider"></div><div class="detail-section-title">CONNECTED IDEAS</div>
+    @foreach (var edge in Connections)
+    {
+        var outgoing = edge.SourceConceptId == selected.Id;
+        var otherId = outgoing ? edge.TargetConceptId : edge.SourceConceptId;
+        <div class="connection-item"><span class="connection-arrow" aria-hidden="true">@(outgoing ? "↗" : "↙")</span><div><button class="text-action" @onclick="() => Select.InvokeAsync(otherId)">@Title(otherId)</button><small>@(outgoing ? "Outgoing" : "Incoming") · @edge.Relationship</small>@if (!string.IsNullOrWhiteSpace(edge.Note)) { <p class="muted-note">@edge.Note</p> }</div><button class="icon-action danger" disabled="@Busy" aria-label="Remove connection to @Title(otherId)" @onclick="() => Disconnect.InvokeAsync(edge)">×</button></div>
+    }
+    @if (!Connections.Any()) { <p class="muted-note">No connections yet. Add another concept and link your ideas.</p> }
+    <div class="detail-meta">CREATED @selected.CreatedAtUtc.ToLocalTime().ToString("dd MMM yyyy")<br />UPDATED @selected.UpdatedAtUtc.ToLocalTime().ToString("dd MMM yyyy HH:mm")</div>
+}
+else
+{
+    <div class="detail-empty"><div class="detail-symbol" aria-hidden="true">◎</div><h3>Explore an idea</h3><p>Select a concept on the map or in the library to reveal its details and connections.</p></div>
+}
+@code {
+    [CascadingParameter] public AtlasState Atlas { get; set; } = default!;
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback Edit { get; set; }
+    [Parameter] public EventCallback Connect { get; set; }
+    [Parameter] public EventCallback Delete { get; set; }
+    [Parameter] public EventCallback<Guid> Select { get; set; }
+    [Parameter] public EventCallback<Connection> Disconnect { get; set; }
+    private IEnumerable<Connection> Connections => Atlas.Concepts.SelectMany(x => x.OutgoingConnections)
+        .Where(x => x.SourceConceptId == Atlas.SelectedId || x.TargetConceptId == Atlas.SelectedId);
+    private string Title(Guid id) => Atlas.Concepts.FirstOrDefault(x => x.Id == id)?.Title ?? "Missing concept";
+}
