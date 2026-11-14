@@ -1,0 +1,29 @@
+@using System.ComponentModel.DataAnnotations
+@using MemoryPalace.Web.Domain.Entities
+<Modal Title="@(Concept is null ? "New concept" : "Edit concept")" Close="Cancel">
+    <EditForm Model="model" OnValidSubmit="Submit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <label for="concept-title">CONCEPT TITLE</label><InputText id="concept-title" class="form-input" maxlength="100" @bind-Value="model.Title" />
+        <label for="concept-description">DESCRIPTION</label><InputTextArea id="concept-description" class="form-input" rows="4" maxlength="2000" @bind-Value="model.Description" />
+        <label for="concept-category">CATEGORY</label><InputText id="concept-category" class="form-input" maxlength="40" @bind-Value="model.Category" />
+        @if (!string.IsNullOrEmpty(Error)) { <p class="form-error" role="alert">@Error</p> }
+        <div class="modal-actions"><button type="button" class="secondary-action" disabled="@Busy" @onclick="Cancel">Cancel</button><button class="primary-action" disabled="@Busy" type="submit">@(Busy ? "Saving…" : "Save concept")</button></div>
+    </EditForm>
+</Modal>
+@code {
+    [Parameter] public Concept? Concept { get; set; }
+    [Parameter] public string Error { get; set; } = "";
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback<ConceptInput> Save { get; set; }
+    [Parameter] public EventCallback Cancel { get; set; }
+    private ConceptInput model = new();
+    protected override void OnInitialized() => model = new() { Title = Concept?.Title ?? "", Description = Concept?.Description ?? "", Category = Concept?.Category ?? "General" };
+    private Task Submit() => Save.InvokeAsync(model);
+    public sealed class ConceptInput
+    {
+        [Required, StringLength(100, MinimumLength = 2)] public string Title { get; set; } = "";
+        [StringLength(2000)] public string Description { get; set; } = "";
+        [Required, StringLength(40, MinimumLength = 2)] public string Category { get; set; } = "General";
+    }
+}

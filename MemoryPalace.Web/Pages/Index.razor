@@ -1,9 +1,161 @@
-﻿@page "/"
+@page "/"
+@implements IDisposable
+@inject AtlasState Atlas
+@inject IConceptService Service
+@inject IJSRuntime JS
+@inject ILogger<Index> Logger
 
-<PageTitle>Index</PageTitle>
+<PageTitle>Memory Palace — Knowledge Atlas</PageTitle>
+<CascadingValue Value="Atlas">
+<div class="mp-shell">
+    <aside class="mp-rail" aria-label="Workspace">
+        <a class="mp-mark" href="/" aria-label="Memory Palace home">M<span>P</span></a>
+        <button class="rail-button @(!library ? "active" : "")" aria-label="Show knowledge map" aria-pressed="@(!library)" @onclick="() => library = false">⌘</button>
+        <button class="rail-button @(library ? "active" : "")" aria-label="Show library" aria-pressed="@library" @onclick="() => library = true">▤</button>
+        <div class="rail-spacer"></div><div class="rail-avatar" title="Personal workspace">P</div>
+    </aside>
+    <main id="main-content" class="mp-main">
+        <header class="mp-topbar"><div class="crumb">WORKSPACE <span>/</span> PERSONAL KNOWLEDGE</div><div class="top-status"><i></i> LOCAL KNOWLEDGE ATLAS</div></header>
+        <section class="mp-heading">
+            <div><div class="eyebrow">YOUR SECOND BRAIN, VISUALIZED</div><h1>Knowledge <em>Atlas</em></h1><p class="subtitle">A living map of what you know — and how everything connects.</p></div>
+            <div class="heading-actions"><button class="secondary-action" disabled="@busy" @onclick="Export">Export backup</button><label class="secondary-action import-label">Restore backup<InputFile OnChange="Import" accept=".json,application/json" disabled="@busy" aria-label="Restore JSON backup into an empty atlas" /></label><button class="primary-action" disabled="@busy" @onclick="() => OpenEditor(false)">＋ New concept</button></div>
+        </section>
+        @if (!string.IsNullOrEmpty(notice)) { <div class="notice" role="status">@notice<button class="icon-action" aria-label="Dismiss notification" @onclick='() => notice = ""'>×</button></div> }
+        <section class="stats-row" aria-label="Atlas statistics">
+            <div class="stat-card"><span class="stat-label">TOTAL CONCEPTS</span><strong>@Atlas.Concepts.Count.ToString("00")</strong><small>Across your knowledge space</small></div>
+            <div class="stat-card"><span class="stat-label">CONNECTIONS</span><strong>@Atlas.ConnectionCount.ToString("00")</strong><small>Ideas linked together</small></div>
+            <div class="stat-card"><span class="stat-label">CATEGORIES</span><strong>@Atlas.Categories.Count.ToString("00")</strong><small>Fields of exploration</small></div>
+            <div class="stat-card accent-stat"><span class="stat-label">WORKSPACE</span><strong>LOCAL</strong><small>SQLite · personal atlas</small></div>
+        </section>
+        <section class="workspace-grid" aria-busy="@busy">
+            <div class="map-panel">
+                <div class="panel-head"><div><div class="eyebrow">SPATIAL OVERVIEW</div><h2>@(library ? "Concept library" : "Your knowledge map")</h2></div><div class="map-tools"><span class="map-count">@Atlas.Visible.Count concepts</span><button class="icon-action" aria-label="Refresh atlas" disabled="@busy" @onclick="Reload">↻</button></div></div>
+                <div class="map-toolbar"><div class="search-wrap"><span aria-hidden="true">⌕</span><input aria-label="Search concepts" placeholder="Search concepts..." value="@Atlas.Search" @oninput='e => Filter(e.Value?.ToString() ?? "", Atlas.Category)' /></div><select aria-label="Filter by category" value="@Atlas.Category" @onchange='e => Filter(Atlas.Search, e.Value?.ToString() ?? "")'><option value="">All categories</option>@foreach (var category in Atlas.Categories) { <option value="@category">@category</option> }</select></div>
+                @if (loading) { <div class="empty-state" role="status"><p>Mapping your knowledge…</p></div> }
+                else if (!Atlas.Visible.Any())
+                {
+                    <div class="empty-state"><div class="empty-orbit" aria-hidden="true">✳</div><h3>@(Atlas.Concepts.Any() ? "No matching concepts" : "Your atlas is waiting.")</h3><p>@(Atlas.Concepts.Any() ? "Try another search or clear your filters." : "Add your first concept and start connecting ideas.")</p>
+                    @if (Atlas.Concepts.Any()) { <button class="secondary-action" @onclick='() => Filter("", "")'>Clear filters</button> } else { <button class="primary-action" @onclick="() => OpenEditor(false)">＋ Create first concept</button> }</div>
+                }
+                else if (library)
+                {
+                    <div class="concept-library">@foreach (var concept in Atlas.Visible) { <button class="library-item @(Atlas.SelectedId == concept.Id ? "selected" : "")" @onclick="() => Select(concept.Id)"><strong>@concept.Title</strong><span class="category-pill">@concept.Category</span><span>@concept.Description</span></button> }</div>
+                }
+                else
+                {
+                    @if (Atlas.Visible.Count > 60) { <p class="muted-note map-limit">Showing the first 60 concepts. Search or filter to explore more, or open the library.</p> }
+                    <KnowledgeGraph Concepts="MapConcepts" SelectedId="Atlas.SelectedId" Path="path" Select="Select" />
+                }
+                <div class="map-legend"><span><i class="legend-node"></i> Concept</span><span><i class="legend-line"></i> Directed relationship</span><span class="legend-hint">Drag canvas to pan · drag a node to move</span></div>
+                <div class="path-tools"><label for="path-start">DISCOVER A CONNECTION</label><div class="path-controls"><select id="path-start" aria-label="Path starting concept" @bind="pathStart"><option value="">From…</option>@foreach (var item in Atlas.Concepts) { <option value="@item.Id">@item.Title</option> }</select><select aria-label="Path destination concept" @bind="pathEnd"><option value="">To…</option>@foreach (var item in Atlas.Concepts) { <option value="@item.Id">@item.Title</option> }</select><button class="secondary-action" disabled="@(!pathStart.HasValue || !pathEnd.HasValue)" @onclick="FindPath">Find path</button></div><p class="muted-note" role="status">@pathMessage</p></div>
+            </div>
+            <aside class="detail-panel" aria-label="Concept details">
+                <ConceptDetails Busy="busy" Edit="() => OpenEditor(true)" Connect="OpenConnection" Delete='() => dialog = "delete"' Select="Select" Disconnect="ConfirmDisconnect" />
+            </aside>
+        </section>
+        <footer class="mp-footer"><span>MEMORY PALACE <b>·</b> KNOWLEDGE SYSTEM</span><span>BUILT TO CONNECT IDEAS</span></footer>
+    </main>
+</div>
+</CascadingValue>
+@if (dialog == "editor") { <ConceptEditor Concept="editingConcept" Busy="busy" Error="formError" Save="SaveConcept" Cancel="CloseDialog" /> }
+@if (dialog == "connect" && Atlas.Selected is { } source) { <ConnectionEditor Source="source" Concepts="Atlas.Concepts" Busy="busy" Error="formError" Save="SaveConnection" Cancel="CloseDialog" /> }
+@if (dialog == "delete" && Atlas.Selected is { } deleting)
+{
+    <Modal Title="Delete concept?" Close="CloseDialog"><p>Delete “@deleting.Title” and all its connections? This cannot be undone.</p>@if (formError.Length > 0) { <p role="alert" class="form-error">@formError</p> }<div class="modal-actions"><button class="secondary-action" disabled="@busy" @onclick="CloseDialog">Cancel</button><button class="primary-action danger-action" disabled="@busy" @onclick="DeleteConcept">Delete concept</button></div></Modal>
+}
+@if (dialog == "disconnect" && disconnecting is not null)
+{
+    <Modal Title="Remove connection?" Close="CloseDialog"><p>Remove this relationship? Both concepts will remain in your atlas.</p>@if (formError.Length > 0) { <p role="alert" class="form-error">@formError</p> }<div class="modal-actions"><button class="secondary-action" disabled="@busy" @onclick="CloseDialog">Cancel</button><button class="primary-action danger-action" disabled="@busy" @onclick="Disconnect">Remove connection</button></div></Modal>
+}
 
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
-
-<SurveyPrompt Title="How is Blazor working for you?" />
+@code {
+    private IReadOnlyList<Concept> MapConcepts => Atlas.Visible.OrderByDescending(x => path.Contains(x.Id)).Take(60).ToList();
+    private bool busy, library;
+    private bool loading = true;
+    private string dialog = "", formError = "", notice = "";
+    private Concept? editingConcept;
+    private Connection? disconnecting;
+    private Guid? pathStart, pathEnd;
+    private IReadOnlyList<Guid> path = Array.Empty<Guid>();
+    private string pathMessage = "Find the shortest chain of ideas. Relationships are traversed in either direction.";
+    protected override async Task OnInitializedAsync()
+    {
+        Atlas.Changed += OnAtlasChanged;
+        await Reload();
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await JS.InvokeVoidAsync("memoryPalace.ready");
+    }
+    private void OnAtlasChanged() => _ = InvokeAsync(StateHasChanged);
+    public void Dispose() => Atlas.Changed -= OnAtlasChanged;
+    private string Title(Guid id) => Atlas.Concepts.FirstOrDefault(x => x.Id == id)?.Title ?? "Missing concept";
+    private void Select(Guid id) => Atlas.SelectedId = id;
+    private void Filter(string search, string category) => Atlas.Filter(search, category);
+    private void CloseDialog() { if (!busy) { dialog = ""; formError = ""; } }
+    private void OpenEditor(bool edit) { editingConcept = edit ? Atlas.Selected : null; formError = ""; dialog = "editor"; }
+    private void OpenConnection() { formError = ""; dialog = "connect"; }
+    private void ConfirmDisconnect(Connection edge) { disconnecting = edge; formError = ""; dialog = "disconnect"; }
+    private async Task Reload() => await Run(async () => { await Atlas.ReloadAsync(); ResetPath(); }, "Atlas refreshed.");
+    private void ResetPath()
+    {
+        path = Array.Empty<Guid>();
+        pathMessage = "Find the shortest chain of ideas. Relationships are traversed in either direction.";
+        if (!Atlas.Concepts.Any(x => x.Id == pathStart)) pathStart = null;
+        if (!Atlas.Concepts.Any(x => x.Id == pathEnd)) pathEnd = null;
+    }
+    private async Task SaveConcept(ConceptEditor.ConceptInput input) => await Mutate(async () =>
+    {
+        var saved = editingConcept is null
+            ? await Service.CreateAsync(input.Title, input.Description, input.Category)
+            : await Service.UpdateAsync(editingConcept.Id, input.Title, input.Description, input.Category);
+        Atlas.SelectedId = saved.Id;
+        Atlas.Filter("", "");
+    }, "Concept saved.");
+    private Task SaveConnection(ConnectionEditor.ConnectionInput input) => Mutate(
+        () => Service.ConnectAsync(Atlas.SelectedId!.Value, input.Target, input.Relationship, input.Note), "Ideas connected.");
+    private Task DeleteConcept() => Mutate(async () => { await Service.DeleteAsync(Atlas.SelectedId!.Value); Atlas.SelectedId = null; }, "Concept and its connections removed.");
+    private Task Disconnect() => Mutate(() => Service.DisconnectAsync(disconnecting!.Id), "Connection removed.");
+    private Task Export() => Run(async () => await JS.InvokeVoidAsync("memoryPalace.download", $"memory-palace-{DateTime.UtcNow:yyyyMMdd-HHmmss}.json", await Service.ExportAsync()), "Backup downloaded.");
+    private async Task Import(InputFileChangeEventArgs args)
+    {
+        await Run(async () =>
+        {
+            using var reader = new StreamReader(args.File.OpenReadStream(2 * 1024 * 1024));
+            await Service.ImportAsync(await reader.ReadToEndAsync());
+            await Atlas.ReloadAsync();
+            ResetPath();
+        }, "Backup restored.");
+    }
+    private async Task Mutate(Func<Task> action, string success) => await Run(async () =>
+    {
+        await action();
+        dialog = "";
+        await Atlas.ReloadAsync();
+        ResetPath();
+    }, success);
+    private async Task Run(Func<Task> action, string success)
+    {
+        if (busy) return;
+        busy = true;
+        formError = "";
+        try { await action(); notice = success; }
+        catch (ArgumentException ex) { if (dialog.Length > 0) formError = ex.Message; else notice = ex.Message; }
+        catch (IOException ex) { Logger.LogWarning(ex, "File operation failed"); notice = "Could not read the backup. Choose a JSON file smaller than 2 MB."; }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Atlas operation failed");
+            const string message = "Could not complete this operation. Please refresh and try again.";
+            if (dialog.Length > 0) formError = message; else notice = message;
+        }
+        finally { busy = false; loading = false; }
+    }
+    private void FindPath()
+    {
+        if (!pathStart.HasValue || !pathEnd.HasValue) return;
+        path = GraphExplorer.FindPath(Atlas.Concepts, pathStart.Value, pathEnd.Value);
+        pathMessage = path.Count == 0 ? "No connection found. Link these areas of your atlas to build a bridge."
+            : $"{path.Count - 1} step(s): {string.Join(" → ", path.Select(Title))}";
+        if (path.Count > 0) { Atlas.Filter("", ""); library = false; }
+    }
+}

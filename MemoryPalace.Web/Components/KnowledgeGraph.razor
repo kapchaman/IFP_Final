@@ -1,0 +1,104 @@
+@using System.Globalization
+@using MemoryPalace.Web.Domain.Entities
+@inject IJSRuntime JS
+<div @ref="canvasRef" class="graph-canvas" role="group" aria-label="Knowledge map. Select a concept to explore its connections."
+     @onpointerdown="StartPan" @onpointermove="MovePointer" @onpointerup="EndPointer" @onpointerleave="EndPointer"
+     @onwheel="ZoomWheel" @onwheel:preventDefault="true">
+    <div class="graph-world" style="transform:translate(@N(panX)px,@N(panY)px) scale(@N(zoom))">
+        <svg class="graph-lines" viewBox="0 0 800 460" preserveAspectRatio="none" aria-hidden="true">
+            <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#70bdb1" /></marker></defs>
+            @foreach (var edge in edges)
+            {
+                var a = positions[edge.SourceConceptId];
+                var b = positions[edge.TargetConceptId];
+                <line x1="@N(a.X * 8)" y1="@N(a.Y * 4.6)" x2="@N(b.X * 8)" y2="@N(b.Y * 4.6)" class="graph-edge @(OnPath(edge) ? "path-edge" : "")" marker-end="url(#arrow)" />
+            }
+        </svg>
+        @foreach (var concept in Concepts)
+        {
+            var pos = positions[concept.Id];
+            <button class="graph-node @(SelectedId == concept.Id ? "selected" : "") @(Path.Contains(concept.Id) ? "path-node" : "")" style="left:@N(pos.X)%;top:@N(pos.Y)%;--category-color:@CategoryColor(concept.Category)" aria-pressed="@(SelectedId == concept.Id)" title="Drag to move this concept" @onpointerdown="e => StartNodeDrag(e, concept.Id)" @onpointerdown:stopPropagation="true" @onclick="() => Select.InvokeAsync(concept.Id)">
+                <span class="node-core"></span><span class="node-title">@concept.Title</span><span class="node-category">@concept.Category</span>
+            </button>
+        }
+    </div>
+    <div class="graph-zoom" @onpointerdown:stopPropagation="true" aria-label="Graph zoom controls">
+        <button type="button" title="Zoom in" aria-label="Zoom in" @onclick="() => SetZoom(zoom * 1.2)">+</button>
+        <button type="button" title="Zoom out" aria-label="Zoom out" @onclick="() => SetZoom(zoom / 1.2)">−</button>
+        <button type="button" title="Reset map view" aria-label="Reset map view" @onclick="ResetView">Reset</button>
+    </div>
+</div>
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<Concept> Concepts { get; set; } = Array.Empty<Concept>();
+    [Parameter] public Guid? SelectedId { get; set; }
+    [Parameter] public IReadOnlyList<Guid> Path { get; set; } = Array.Empty<Guid>();
+    [Parameter] public EventCallback<Guid> Select { get; set; }
+    private Dictionary<Guid, (double X, double Y)> positions = new();
+    private List<Connection> edges = new();
+    private ElementReference canvasRef;
+    private double zoom = 1, panX, panY, lastX, lastY, canvasWidth = 800, canvasHeight = 460;
+    private Guid? movingNode;
+    private bool panning;
+    protected override void OnParametersSet()
+    {
+        var ids = Concepts.Select(x => x.Id).ToHashSet();
+        foreach (var stale in positions.Keys.Where(x => !ids.Contains(x)).ToList()) positions.Remove(stale);
+        for (var i = 0; i < Concepts.Count; i++)
+            if (!positions.ContainsKey(Concepts[i].Id)) positions[Concepts[i].Id] = Position(i, Concepts.Count);
+        edges = Concepts.SelectMany(x => x.OutgoingConnections).Where(x => positions.ContainsKey(x.SourceConceptId) && positions.ContainsKey(x.TargetConceptId)).ToList();
+    }
+
+    private async Task StartPan(PointerEventArgs e)
+    {
+        panning = true; movingNode = null; lastX = e.ClientX; lastY = e.ClientY;
+        await JS.InvokeVoidAsync("memoryPalace.capturePointer", canvasRef, e.PointerId);
+        await MeasureCanvas();
+    }
+
+    private async Task StartNodeDrag(PointerEventArgs e, Guid id)
+    {
+        movingNode = id; panning = false; lastX = e.ClientX; lastY = e.ClientY;
+        await JS.InvokeVoidAsync("memoryPalace.capturePointer", canvasRef, e.PointerId);
+        await MeasureCanvas();
+    }
+
+    private async Task MeasureCanvas()
+    {
+        try
+        {
+            var size = await JS.InvokeAsync<double[]>("memoryPalace.size", canvasRef);
+            if (size.Length == 2 && size[0] > 0 && size[1] > 0) { canvasWidth = size[0]; canvasHeight = size[1]; }
+        }
+        catch { canvasWidth = 800; canvasHeight = 460; }
+    }
+
+    private void MovePointer(PointerEventArgs e)
+    {
+        var dx = e.ClientX - lastX;
+        var dy = e.ClientY - lastY;
+        if (movingNode is Guid id && positions.TryGetValue(id, out var point))
+            positions[id] = (point.X + dx * 100 / Math.Max(canvasWidth, 1) / zoom, point.Y + dy * 100 / Math.Max(canvasHeight, 1) / zoom);
+        else if (panning) { panX += dx; panY += dy; }
+        lastX = e.ClientX; lastY = e.ClientY;
+    }
+
+    private void EndPointer() { panning = false; movingNode = null; }
+    private void ZoomWheel(WheelEventArgs e) => SetZoom(zoom * (e.DeltaY < 0 ? 1.1 : 1 / 1.1));
+    private void SetZoom(double value) => zoom = Math.Clamp(value, 0.5, 2.5);
+    private void ResetView() { zoom = 1; panX = 0; panY = 0; }
+    private bool OnPath(Connection edge)
+    {
+        for (var i = 1; i < Path.Count; i++)
+            if ((Path[i - 1] == edge.SourceConceptId && Path[i] == edge.TargetConceptId) || (Path[i] == edge.SourceConceptId && Path[i - 1] == edge.TargetConceptId)) return true;
+        return false;
+    }
+    private static (double X, double Y) Position(int index, int count)
+    {
+        var angle = 2 * Math.PI * index / Math.Max(count, 1) - Math.PI / 2;
+        var radius = count == 1 ? 0 : 34;
+        return (50 + radius * Math.Cos(angle), 50 + radius * Math.Sin(angle));
+    }
+    private static readonly string[] CategoryPalette = { "#65d7c1", "#8ca9ff", "#e8b878", "#c79bff", "#ff8fa3", "#7fd4ff", "#b6e36b" };
+    private static string CategoryColor(string category) => CategoryPalette[category.ToLowerInvariant().Aggregate(0, (sum, character) => sum + character) % CategoryPalette.Length];
+    private static string N(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+}

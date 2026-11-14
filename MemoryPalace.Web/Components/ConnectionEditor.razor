@@ -1,0 +1,25 @@
+@using MemoryPalace.Web.Domain.Entities
+<Modal Title="Connect ideas" Close="Cancel">
+    <form @onsubmit="Submit" @onsubmit:preventDefault="true">
+        <p>From <strong>@Source.Title</strong> to:</p>
+        <label for="connection-target">TARGET CONCEPT</label>
+        <select id="connection-target" class="form-input" @bind="target" required><option value="">Choose a concept</option>@foreach (var item in Concepts.Where(x => x.Id != Source.Id)) { <option value="@item.Id">@item.Title</option> }</select>
+        <label for="connection-type">RELATIONSHIP</label><select id="connection-type" class="form-input" @bind="relationship">@foreach (var item in Enum.GetValues<RelationshipType>()) { <option value="@item">@item</option> }</select>
+        <label for="connection-note">NOTE (OPTIONAL)</label><textarea id="connection-note" class="form-input" maxlength="500" @bind="note"></textarea>
+        @if (!string.IsNullOrEmpty(Error)) { <p class="form-error" role="alert">@Error</p> }
+        <div class="modal-actions"><button type="button" class="secondary-action" disabled="@Busy" @onclick="Cancel">Cancel</button><button type="submit" class="primary-action" disabled="@(Busy || !target.HasValue)">Connect</button></div>
+    </form>
+</Modal>
+@code {
+    [Parameter, EditorRequired] public Concept Source { get; set; } = default!;
+    [Parameter, EditorRequired] public IReadOnlyList<Concept> Concepts { get; set; } = Array.Empty<Concept>();
+    [Parameter] public string Error { get; set; } = "";
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback<ConnectionInput> Save { get; set; }
+    [Parameter] public EventCallback Cancel { get; set; }
+    private Guid? target;
+    private RelationshipType relationship;
+    private string note = "";
+    private Task Submit() => target.HasValue ? Save.InvokeAsync(new(target.Value, relationship, note)) : Task.CompletedTask;
+    public sealed record ConnectionInput(Guid Target, RelationshipType Relationship, string Note);
+}

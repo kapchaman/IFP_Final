@@ -11,9 +11,10 @@ var databaseDirectory = Path.Combine(builder.Environment.ContentRootPath, "App_D
 Directory.CreateDirectory(databaseDirectory);
 var databasePath = Path.Combine(databaseDirectory, "memory-palace.db");
 
-builder.Services.AddDbContext<MemoryPalaceDbContext>(options =>
+builder.Services.AddDbContextFactory<MemoryPalaceDbContext>(options =>
     options.UseSqlite($"Data Source={databasePath}"));
-builder.Services.AddScoped<ConceptService>();
+builder.Services.AddScoped<IConceptService, ConceptService>();
+builder.Services.AddScoped<MemoryPalace.Web.State.AtlasState>();
 
 var app = builder.Build();
 
@@ -31,7 +32,8 @@ app.MapFallbackToPage("/_Host");
 
 await using (var scope = app.Services.CreateAsyncScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<MemoryPalaceDbContext>();
+    var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MemoryPalaceDbContext>>();
+    await using var db = await factory.CreateDbContextAsync();
     await db.Database.EnsureCreatedAsync();
 }
 
