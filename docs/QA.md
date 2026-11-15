@@ -1,5 +1,11 @@
 # Quality Assurance Report
 
+## Graph interaction verification — 15 November 2026
+
+On macOS arm64 with SDK 10.0.401, the solution built successfully after the map fixes: **zero warnings and zero errors**. Both executable runners were repeated successfully: **18 core checks and 29 SQLite checks**. Unlike the original baseline below, this run used resolved assets for **EF Core SQLite 10.0.12** and **SQLitePCLRaw.bundle_e_sqlite3 3.0.5**. No fresh network restore or vulnerability audit was performed in this run.
+
+JavaScript syntax checks passed. The Playwright scenario now checks mouse and keyboard selection, selection after dragging, and the computed path-node fill and border colors, alongside pan/zoom and relationship workflows. Browser execution remains pending: installed Chromium failed to launch because this environment denied its macOS Mach port registration (`bootstrap_check_in: Permission denied`). The passing .NET checks do not establish interactive browser behavior.
+
 ## Automated execution results
 
 **Recorded baseline environment:** macOS arm64, .NET SDK 10.0.401.
@@ -23,7 +29,7 @@ The SQLite runner uses the actual `ConceptService`, EF Core, and a temporary SQL
 
 The passing SQLite run used the locally cached baseline: EF Core SQLite 10.0.0 and SQLitePCLRaw 2.1.11. It exposed warning `NU1903` for the native SQLite dependency. The project references have since been updated to **EF Core SQLite 10.0.12** and **SQLitePCLRaw.bundle_e_sqlite3 3.0.5**. No warning has been suppressed.
 
-A fresh restore, vulnerability audit, warning-free build, and repeat SQLite run are required to qualify the updated dependency graph. This session cannot resolve `api.nuget.org`, so these final package checks are **pending**. The 47 passing results above remain valid evidence for the tested baseline; they are not evidence that the new native package was downloaded or executed.
+The 15 November verification above supersedes the baseline for the cached-package build and runner results: both now pass with the updated package assets. A fresh network restore and vulnerability audit are still required for full dependency qualification. The original 14 November results remain historical evidence for the baseline rather than proof of the upgraded native package.
 
 ```sh
 dotnet restore MemoryPalace.sln
@@ -96,7 +102,7 @@ CI performs restore, a warning-as-error build, and both runners on Windows, macO
 
 Playwright scenarios cover creating concepts, creating a typed relationship with a note, discovering a path, editing, reloading persistent data, navigating the library, deleting a connected concept, checking remaining integrity, and cleaning up. A second scenario checks Escape dismissal and horizontal overflow. The configuration targets Chromium, Firefox, WebKit, and a mobile WebKit viewport.
 
-**Execution status: not run.** Playwright is not installed in this workspace, and package access is unavailable. Browser automation is separate from the 47 passing .NET assertions. Follow the README commands with a separate test instance at `http://localhost:5100` after installing the npm package and browsers.
+**Execution status: not run.** Playwright and Chromium are installed, but the browser launch is blocked by the current macOS sandbox permissions. Browser automation is separate from the 47 passing .NET assertions. Follow the README commands with a separate test instance at `http://localhost:5100` after installing the npm package and browsers.
 
 ## Manual test matrix
 

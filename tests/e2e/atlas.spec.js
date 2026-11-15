@@ -27,6 +27,20 @@ test('create, connect, explore, edit, persist, and delete ideas', async ({ page 
   const secondGraphNode = page.locator('.graph-node').filter({ hasText: second });
   const categoryColor = await graphNode.locator('.node-core').evaluate(element => getComputedStyle(element).backgroundColor);
   expect(await secondGraphNode.locator('.node-core').evaluate(element => getComputedStyle(element).backgroundColor)).toBe(categoryColor);
+  // A click and keyboard activation select a node without changing its position.
+  await graphNode.click();
+  await expect(page.getByRole('heading', { name: first, exact: true })).toBeVisible();
+  await secondGraphNode.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: second, exact: true })).toBeVisible();
+  await graphNode.focus();
+  await page.keyboard.press('Space');
+  await expect(page.getByRole('heading', { name: first, exact: true })).toBeVisible();
+  await secondGraphNode.click();
+  await expect(page.getByRole('heading', { name: second, exact: true })).toBeVisible();
+  const stationaryStyle = await graphNode.getAttribute('style');
+  await graphNode.hover();
+  await expect(graphNode).toHaveAttribute('style', stationaryStyle);
   const world = page.locator('.graph-world');
   await page.getByRole('button', { name: 'Zoom in' }).click();
   await expect(world).toHaveAttribute('style', /scale\(1\.2\)/);
@@ -49,8 +63,13 @@ test('create, connect, explore, edit, persist, and delete ideas', async ({ page 
   await page.mouse.down();
   await page.mouse.move(nodeBefore.x + nodeBefore.width / 2 + 36, nodeBefore.y + nodeBefore.height / 2, { steps: 4 });
   await page.mouse.up();
-  const nodeAfter = await graphNode.boundingBox();
-  expect(Math.abs(nodeAfter.x - nodeBefore.x)).toBeGreaterThan(10);
+  await expect.poll(async () => (await graphNode.boundingBox()).x - nodeBefore.x).toBeGreaterThan(10);
+  // Dragging an unselected node must not activate it at pointer-up.
+  await expect(page.getByRole('heading', { name: second, exact: true })).toBeVisible();
+  await graphNode.click();
+  await expect(page.getByRole('heading', { name: first, exact: true })).toBeVisible();
+  await secondGraphNode.click();
+  await expect(page.getByRole('heading', { name: second, exact: true })).toBeVisible();
   await page.getByRole('button', { name: '＋ Connect', exact: true }).click();
   let modal = page.getByRole('dialog');
   await modal.getByLabel('TARGET CONCEPT').selectOption({ label: first });
@@ -62,6 +81,11 @@ test('create, connect, explore, edit, persist, and delete ideas', async ({ page 
   await page.getByRole('combobox', { name: 'Path destination concept' }).selectOption({ label: first });
   await page.getByRole('button', { name: 'Find path', exact: true }).click();
   await expect(page.getByText(`1 step(s): ${second} → ${first}`, { exact: true })).toBeVisible();
+  for (const node of [graphNode, secondGraphNode]) {
+    await expect(node).toHaveClass(/path-node/);
+    await expect(node.locator('.node-core')).toHaveCSS('background-color', 'rgb(255, 213, 150)');
+    await expect(node.locator('.node-core')).toHaveCSS('border-top-color', 'rgb(255, 240, 199)');
+  }
   await page.getByRole('button', { name: 'Edit', exact: true }).click();
   modal = page.getByRole('dialog');
   await modal.getByLabel('CONCEPT TITLE').fill(renamed);
