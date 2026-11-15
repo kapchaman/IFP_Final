@@ -1,8 +1,18 @@
 using MemoryPalace.Web.Data;
 using MemoryPalace.Web.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+if (builder.Environment.IsDevelopment())
+{
+    // Windows Event Log may be unavailable to a normal local developer account.
+    builder.Logging.ClearProviders();
+    builder.Logging.AddConsole();
+    builder.Logging.AddFilter("Microsoft.AspNetCore.DataProtection", LogLevel.None);
+    builder.Services.AddSingleton<IDataProtectionProvider>(new EphemeralDataProtectionProvider());
+}
 
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
@@ -22,9 +32,9 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
 
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.MapBlazorHub();
