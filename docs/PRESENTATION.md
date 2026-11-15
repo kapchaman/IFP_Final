@@ -1,118 +1,92 @@
 # Memory Palace — Defense Script
 
 **Course:** C# / .NET Cross-Platform Development
+
 **Team:** Amirzhanuly Abay and Shikhiyev Alikhan
-**Format:** 11 slides and a live demonstration, approximately 18–20 minutes.
 
-Open `presentation.html` in a browser. Arrow keys move between slides; **Print / PDF** prints the complete deck. The title slide already contains both names. If either spelling changes, edit its `team-members` element and the team line above. A reusable deck template would use `[Student 1 Full Name]` and `[Student 2 Full Name (Optional)]` in those locations.
+**Format:** 12 slides, approximately 18–20 minutes including a four-minute live demo.
 
-Both students should rehearse the whole project, including the database rules and graph algorithm. Assign speaking sections after rehearsal rather than leaving either person unable to explain the other sections.
+Open `Memory_Palace_Defense.pptx` in PowerPoint, Keynote, or a compatible presentation editor. All slide text and diagrams are editable. Speaker notes are included for every slide. Use `Memory_Palace_Defense.pdf` for a read-only copy or direct upload.
 
-## Slide 1 — Project and team · 1 minute
+Both names are already entered on the title and closing slides. To change them, edit those text boxes and this script. To rebuild the files from source, run `python3 tools/build_presentation.py` from the repository root after installing the dependencies in `tools/presentation-requirements.txt`. The PDF and PowerPoint are built from the same layouts; the PDF is not an Office-rendered export.
 
-“Good afternoon. We are Amirzhanuly Abay and Shikhiyev Alikhan. Our final project is Memory Palace — Knowledge Atlas, a personal knowledge workspace built with C#, .NET 10, and Blazor Server.
+Both students should rehearse the entire implementation and be ready to explain every layer. Use a separate demo workspace and consult `QA.md` for current verification status.
 
-The application lets a student capture concepts, describe how they relate, and discover chains between different subjects. The central idea is that knowledge is useful not only as separate notes, but also as relationships that we can inspect and explain.”
+## Slide 1 — Memory Palace · 45 sec
 
-Introduce the topic and show the map/library screenshot or the running workspace. State the local personal-workspace scope clearly.
+Good afternoon. We are Amirzhanuly Abay and Shikhiyev Alikhan. Our project is Memory Palace — Knowledge Atlas, a personal knowledge workspace built with C#, .NET 10, and Blazor Server.
+The project starts from a simple observation: collecting definitions is easier than explaining how those definitions connect. We wanted a small application where a student can capture an idea, describe a relationship, and follow a chain into another subject.
+We will show the user workflow, explain the architecture and integrity rules, walk through the path-finding algorithm, and finish with a live demonstration and the verification results. The scope is a local personal workspace rather than a multi-user cloud service.
 
-## Slide 2 — Aim and objectives · 1 minute
+## Slide 2 — The problem and the goal · 75 sec
 
-“Our aim is to make connections between ideas visible and searchable. The intended audience is students organizing material across courses.
+The intended audience is students organizing material across subjects. Ordinary notes can store useful definitions, but related ideas are often separated by files, folders, or courses. A student may know each term without being able to explain the relationship between them.
+Our aim is to make those relationships visible and searchable. The three core objectives are capture, connect, and discover. Capture means validated concepts with descriptions and categories. Connect means directed, typed relationships with a short note explaining the link. Discover means search, filtering, and a shortest chain between two concepts.
+Persistence and backup support all three objectives. The practical value is an inspectable study atlas; we have not conducted a study claiming improved memory or higher grades. For the demonstration, the example combines learning techniques, graph theory, and the technologies used to build the application.
 
-The objectives are to implement concept creation, reading, editing, and deletion; typed directed relationships; search and category filtering; persistent local storage; shortest-path discovery; and a portable backup format. We also need a structure that can be tested and explained independently of the interface.”
+## Slide 3 — Existing approaches · 1 min
 
-Use a concrete example: connect breadth-first search to graph theory, then connect both to the application's knowledge map. Explain that educational usefulness is the motivation; the project does not claim a measured improvement in memory or grades.
+We compared approaches rather than trying to reproduce every feature of a large commercial tool. Files and linear notes are simple and portable, and they work well for long-form content. Wiki-style links improve navigation, but a relationship such as supports or contradicts still needs a convention. General graph systems offer flexible modeling and more powerful queries, with more setup and a steeper learning curve.
+Memory Palace narrows the problem to concise concepts, five relationship types, and unweighted path discovery. It combines a spatial view with a conventional searchable library, so users do not have to rely on the graph for every action.
+This is the project's relevance and its main design trade-off: fewer features, but a focused workflow that can be implemented, tested, and explained within the course scope. It is not a claim that a small coursework application replaces all note-taking or graph-database products.
 
-## Slide 3 — Technology comparison · 2 minutes
+## Slide 4 — Technology choices · 90 sec
 
-“We chose Blazor Server because both UI event handlers and the application service can be written in C#. The server can access EF Core directly, so a separate REST API is unnecessary for this scope.
+The application targets .NET 10 and uses Blazor Server for UI event handling. That lets us write both UI workflows and business logic in C#, with direct server-side access to the service layer. It avoids a separate REST API for this local scope, but the browser needs a connection to the running server.
+Blazor WebAssembly would move UI execution into the browser. The trade-offs include downloading the browser runtime and introducing a separate boundary for data access. Neither hosting model is universally better; the choice follows the deployment and learning goals.
+SQLite is a file-based database with no separate server installation. It is convenient for a portable personal workspace, while an external relational database is a better fit for multiple application servers or heavier concurrent writes. EF Core handles mapping and transactions. We chose SVG and CSS for the graph rather than adding a separate graph-rendering framework.
 
-Blazor WebAssembly would move UI execution into the browser and reduce that part of the server workload. It would also require downloading the browser runtime and designing a separate boundary for database access. Blazor Server instead requires a persistent connection between the browser and server.
+## Slide 5 — The workspace · 75 sec
 
-SQLite keeps deployment small: one database file and no separate database server. An external relational database would be a better fit for multiple application servers or heavier concurrent writes, but adds deployment and operational work.”
+This is an interface schematic, not a screenshot of a measured browser session. The main layout puts the current workspace in the center and selected-concept details on the right. A narrow navigation rail switches between the spatial map and the library. Search and category controls narrow the same underlying concept set.
+The normal workflow is to create a concept, connect it, and explore the resulting relationships. The detail panel keeps the definition and connection notes beside the graph, rather than requiring navigation away. The library is important as an alternative for users who prefer text-based browsing or have a larger collection.
+The development method followed four increments: establish the model and integrity rules, complete workflows, verify the core and service behavior, and prepare delivery materials. The page coordinates actions, but reusable editor, modal, graph, and detail components each have narrower responsibilities.
 
-Mention that .NET 10 is the target framework, EF Core handles relational mapping, and HTML/CSS/SVG provide the interface without a separate graph-rendering framework. Discuss actual trade-offs rather than claiming that one technology is universally best.
+## Slide 6 — Architecture · 2 min
 
-## Slide 4 — Existing approaches and relevance · 1 minute
+The browser communicates with a Blazor Server circuit. Index coordinates user workflows and feedback. AtlasState holds the current snapshot, filters, counts, and selected concept. Components depend on IConceptService rather than on the database context; ConceptService owns validation, transactions, and backup workflows.
+State is scoped to one circuit, so independent tabs keep separate selections and search terms. The database itself is shared. A refresh explicitly reloads changes from another tab; there is no custom broadcast service.
+A central design choice is IDbContextFactory. A Blazor circuit can live much longer than one HTTP request, and handlers may overlap. EF Core contexts are not thread-safe, so every service operation creates and disposes a short-lived context. The graph algorithm is independent of UI and persistence, making it straightforward to test.
+Continuous map gestures now render locally in the browser. Only a completed node move updates the component state. This avoids a server round trip for every pointer movement while preserving the concept's position across component renders.
 
-“Ordinary notes and wiki pages work well for longer documents. They can contain links, but a typed relationship such as ‘supports’ or ‘contradicts’ needs explicit organization. General graph systems offer more powerful query capabilities, with a larger setup and learning cost.
+## Slide 7 — Data integrity · 90 sec
 
-Our project focuses on a smaller problem: concise concepts, a limited set of meaningful relationship types, and a path between ideas. The graph supports exploration, while the library gives a straightforward alternative for searching and editing.”
+The domain model has two entities. Concept contains an ID, title, description, category, and creation/update timestamps. Connection contains its own ID, a source concept, a target concept, a relationship type, and an optional note.
+The ordered source and target pair has a unique database index. This prevents a duplicate A-to-B relationship, while allowing B-to-A as a distinct relationship. The service rejects self-links, missing endpoints, undefined relation values, and invalid text lengths. Titles are trimmed, normalized, and checked without case sensitivity in the service transaction. Title uniqueness is not a separate database constraint.
+Deleting a concept first removes both incoming and outgoing relationships, then the concept, in one transaction. This matters because the target-side foreign key restricts deletion.
+Restore validates the complete backup before writing and requires an empty atlas. One transaction commits the validated set. Flat records avoid cycles from EF navigation properties. The goal is predictable failure without leaving dangling edges or a half-restored workspace.
 
-Keep the comparison at the approach level. Do not claim to replace every feature of a full note-taking or graph-database product.
+## Slide 8 — Shortest-path discovery · 90 sec
 
-## Slide 5 — Methodology, plan, and interface mockup · 1 minute
+This example uses the demonstration dataset. Spaced Repetition connects to Active Recall, which connects to Memory Palace. SQLite also connects to Memory Palace. The discovered chain from Spaced Repetition to SQLite is therefore three steps.
+Discovery treats relationships as traversable in either direction. That is why it can move from Memory Palace to SQLite even though the stored semantic direction is the reverse. The stored direction and relationship type are not changed.
+BFS starts with the source in a queue and explores neighbors layer by layer. A predecessor table records how each vertex was reached and marks it visited. When the destination is reached, following predecessors reconstructs the path. Cycles cannot enqueue the same vertex indefinitely.
+For V vertices and E edges, both time and auxiliary space are O(V + E). All edges have equal traversal cost, so BFS finds a shortest chain. Weighted relations would need an algorithm such as Dijkstra's. A missing or disconnected endpoint returns no path; identical endpoints return a zero-step path.
 
-“We worked through the project in increments: inspect the requirements and starting structure, establish data integrity, complete the user workflows, split the interface into reusable components, and add tests and submission materials.
+## Slide 9 — Live demonstration · 4 min
 
-The layout follows the main workflow. Navigation switches between the map and library. The top section shows actions and statistics. The central area supports exploration; the right panel explains the selected idea. Search and categories narrow the workspace, and the path controls help connect two areas of knowledge.”
+Use a separate demonstration workspace. Restore docs/demo-atlas.json into an empty atlas and show the eight concepts and nine relationships. Avoid deleting personal data just to reset the demonstration.
+First, select Breadth-First Search and inspect its connections. Explain that relationship notes describe why two concepts are linked. Second, create Learning Journal in the Learning category, then edit its description. Connect it to Active Recall with the Supports type and an explanatory note.
+Third, find the path from Spaced Repetition to SQLite. Read the chain and point out that discovery can traverse a relationship backwards. Pan the map, drag a node, zoom, and reset. Switch to the library, use a search or category, and clear the filter.
+Finally, export a backup. Open the deletion confirmation for Learning Journal, cancel once, and then confirm. Show that the other concepts remain without a dangling connection. Reload to demonstrate persistence. If time is short, prioritize create, connect, discover, and export. Keep the architecture slide available if the live server is unavailable.
 
-Point to the mockup. Explain why details remain beside the graph rather than requiring a separate navigation step.
+## Slide 10 — Verification · 75 sec
 
-## Slide 6 — Architecture and state · 2 minutes
+The project has two executable assertion runners rather than a third-party test-framework runner. MemoryPalace.CoreChecks tests the independent graph algorithm and scoped-state behavior. MemoryPalace.Tests uses the actual ConceptService against a uniquely named temporary SQLite database, which it removes in a finally block.
+On 15 November 2026, the complete solution built on macOS arm64 with .NET SDK 10.0.401 using the restored package assets. The build had zero errors and zero warnings. All 18 core checks and all 29 SQLite integration checks passed. The resolved assets included EF Core SQLite 10.0.12 and SQLitePCLRaw bundle 3.0.5.
+The 47 assertions are not a measured line-coverage percentage. JavaScript syntax checks passed, and browser scenarios cover workflows and the new map interactions, but this environment denied Chromium launch. The browser and device matrix therefore remains pending. A fresh package restore and vulnerability audit are also separate from the successful cached-asset build. The QA document records these distinctions.
 
-“The browser communicates with a Blazor Server circuit. `Index` coordinates user actions and feedback. `AtlasState` holds a snapshot of the concepts, the current selection, and filters. Components depend on `IConceptService`, while `ConceptService` owns validation, persistence, and backup workflows.
+## Slide 11 — Trade-offs and next steps · 1 min
 
-State is scoped to a circuit, so another browser tab has its own selection and search. Database data is shared. A refresh explicitly loads changes made elsewhere.
+The current scope is a local personal workspace. It has no authentication, separate user-owned datasets, automatic cross-tab broadcasting, or optimistic concurrency token. Concurrent edits use a last-successful-write policy; lock or write errors produce recoverable feedback rather than automatic merging.
+The whole personal atlas is loaded into memory. The graph is bounded to 60 visible nodes for readability and DOM size, with discovered path nodes prioritized. The library and complete text path remain available, but server-side pagination, full-text search, and load benchmarking are future work.
+The next steps follow those limits: add identity and ownership before internet deployment, add migrations and concurrency handling as the schema evolves, and add pagination and larger graph layouts as data grows. Short-lived contexts, a service interface, and an independent graph algorithm provide clear extension points. These boundaries are deliberate scope decisions, not features that have already been completed.
 
-A key design choice is `IDbContextFactory`. A Blazor circuit can outlive an HTTP request, and event handlers can overlap. A shared context would be unsafe because EF Core contexts are not thread-safe. Each operation therefore creates and disposes its own context.”
+## Slide 12 — Discussion · 30 sec
 
-Show the pipeline and identify one component using each mechanism: `KnowledgeGraph` parameters, editor save callbacks, and `ConceptDetails` cascading state. Explain that this is a layered application within one project, not a claim of distributed services.
-
-## Slide 7 — Data integrity and error handling · 1.5 minutes
-
-“A concept contains its text, category, identifier, and timestamps. A relationship contains a source, target, type, and optional note. A unique database index protects the ordered endpoint pair. A to B and B to A are different relationships; a concept cannot connect to itself.
-
-Deletion removes both incoming and outgoing relationships before deleting the concept, within the same transaction. This is necessary because the target foreign key restricts deletion.
-
-Backup restore validates the entire record set first. It rejects duplicate titles, invalid IDs, broken endpoints, undefined relation types, and incompatible versions. It then writes the data in one transaction, only into an empty atlas.”
-
-Explain that field-length and normalized title rules are enforced in the service. Unexpected errors are logged; the user receives a concise recovery message. Do not claim that SQLite automatically enforces EF length metadata.
-
-## Slide 8 — Live demonstration · 4 minutes
-
-Prepare a separate empty demonstration workspace before the defense. Keep personal data backed up; do not delete it just to reset a demonstration.
-
-1. **Restore the example.** Import `docs/demo-atlas.json`. Point out eight concepts and nine relationships.
-2. **Inspect an idea.** Select **Breadth-First Search** and show its relationship to **Graph Theory** and **Memory Palace**, including direction and note.
-3. **Create and edit.** Add **Learning Journal**, category **Learning**, with a brief description. Change the description using **Edit**.
-4. **Create a relationship.** Connect **Learning Journal** to **Active Recall** using **Supports** and a short explanatory note.
-5. **Discover a chain.** Find a path from **Spaced Repetition** to **SQLite**. Read the result and explain why discovery may traverse a stored relationship backwards.
-6. **Explore the map.** Pan the canvas, drag a concept, zoom with the controls and wheel, then reset the map view.
-7. **Switch views.** Search for a title or category, open the library, and show the empty-result recovery by clearing filters.
-8. **Export and delete.** Download a JSON backup. Cancel a deletion once, then confirm deletion of **Learning Journal**. Show that the other concepts remain and no dangling relationship is displayed.
-9. **Check persistence.** Reload the page and select a remaining concept in the library.
-
-If time is short, retain steps 1, 3, 4, 5, and 7. If the server connection fails, use the architecture slide and explain the recovery action rather than presenting the failure as successful execution.
-
-## Slide 9 — BFS and complexity · 1.5 minutes
-
-“The path finder builds an adjacency list and uses a queue. Starting from the source, it visits neighbors layer by layer. A predecessor table records how each vertex was reached and also marks it as visited. When the destination is reached, we reconstruct the path through those predecessors.
-
-Because each vertex and edge is processed a bounded number of times, time complexity is O(V + E). The adjacency list, queue, and predecessor table also use O(V + E) space. A visited set prevents cycles from creating an infinite loop.
-
-All relationships have equal traversal cost. That is why BFS finds a shortest chain. Weighted relationships would need an algorithm such as Dijkstra's.”
-
-Discuss practical limits: at most 60 graph nodes are rendered, with path nodes prioritized; the full text result and library remain available. Database reads use no tracking, and filters/statistics are derived from the current snapshot.
-
-## Slide 10 — Quality assurance · 1.5 minutes
-
-“We have two executable assertion runners. The first checks the graph algorithm and state behavior. The second uses the actual service against a temporary SQLite database, covering validation, CRUD, relationships, deletion integrity, backups, and concurrent reads.
-
-The recorded run passed 18 core assertions and 29 SQLite assertions, for a total of 47. These counts are not a code-coverage percentage. Browser scenarios and a manual device matrix are documented separately.”
-
-Use the current `QA.md` as the source of truth. The recorded SQLite run used cached baseline packages; the dependency references have since been updated to remove the vulnerable native SQLite dependency. Until the final restore, audit, warning-free build, and rerun are completed, state that qualification is pending. Browser/device checks must also be reported according to their actual execution status.
-
-After a successful final verification, update this slide's QA wording and `QA.md` together. Do not describe configured CI jobs as observed passing runs.
-
-## Slide 11 — Limitations and next steps · 1 minute
-
-“The current application is a local personal workspace. It does not yet include authentication, per-user ownership, automatic synchronization across tabs, or optimistic concurrency tokens. Concurrent edits follow a last-successful-write policy.
-
-The next steps would be authentication and ownership, migration-based schema evolution, concurrency handling, server-side search and pagination, and support for larger graphs. The current service boundary and separate graph algorithm give those changes clear places in the design.”
-
-Invite questions and keep the application and architecture document available.
+To conclude, Memory Palace combines three capabilities: capture concise concepts, explain typed relationships, and discover a shortest chain between ideas. The project connects reusable Blazor components with scoped state, service-level validation, transactional SQLite storage, and a separately testable graph algorithm.
+The running demonstration and recorded checks support the implemented scope. Browser verification and the larger deployment concerns remain clearly identified in the QA report and roadmap.
+Thank you. We are ready to discuss the architecture, BFS, data-integrity rules, testing strategy, and the trade-offs behind the implementation. Keep the source, architecture document, and demonstration workspace available for questions. Both team members should be able to explain every layer, including the parts they did not present.
 
 ## Defense Q&A
 

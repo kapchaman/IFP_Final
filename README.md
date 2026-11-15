@@ -108,9 +108,10 @@ EF Core SQLite is pinned to 10.0.12 and the SQLite native bundle to 3.0.5. The d
 - [Architecture and service contracts](docs/ARCHITECTURE.md)
 - [All 20 assessment criteria](docs/REQUIREMENTS.md)
 - [QA evidence and device checklist](docs/QA.md)
-- [Eleven-slide presentation](docs/presentation.html)
+- [PowerPoint presentation — 12 editable slides](docs/Memory_Palace_Defense.pptx)
+- [PDF presentation](docs/Memory_Palace_Defense.pdf)
 - [15–20 minute defense script and Q&A](docs/PRESENTATION.md)
 
-Open `docs/presentation.html` directly in a browser. Use the arrow keys or navigation buttons to move between slides; **Print / PDF** prints the complete deck. Both team names are already entered on the title slide and in the defense script. To change them, edit the title slide's `team-members` element and the team line in `docs/PRESENTATION.md`.
+Open `docs/Memory_Palace_Defense.pptx` in PowerPoint, Keynote, or a compatible editor. All text and diagrams are editable, and every slide includes speaker notes. Use `docs/Memory_Palace_Defense.pdf` for viewing or submission. Both team names are already entered on the title and closing slides and in the defense script. To change them, edit those text boxes and the team line in `docs/PRESENTATION.md`. The layouts can be rebuilt with `python3 tools/build_presentation.py` after installing `tools/presentation-requirements.txt`; the PDF uses the same source layouts rather than an Office export.
 
 This version is intended for a local personal workspace. It does not provide authentication, separate user-owned datasets, or automatic synchronization across browser tabs. Internet deployment would require access control and HTTPS. For schema evolution, large datasets, or multiple servers, see the development notes in the architecture specification.

@@ -29,7 +29,7 @@ The final-project rubric contains 20 extended criteria, each worth 5% of the ove
 | 17 | Innovation | 5% | Knowledge relationships combine semantic direction with direction-independent discovery; map and library support different exploration styles | Educational benefit is a design hypothesis, not a measured research result |
 | 18 | Creative Use of Blazor/C#/.NET | 5% | Cascading state, `EventCallback<T>`, DI factories, records, LINQ, async operations, EF transactions, JS download/dialog interop | Uses the built-in Blazor circuit rather than implementing a separate transport |
 | 19 | Professionalism | 5% | Consistent English materials, named team, ignored build/database artifacts, reviewable commits, CI with warning-as-error builds | Authentication and production deployment hardening are outside current scope |
-| 20 | Presentation | 5% | Eleven-slide HTML deck, 15–20 minute script, technology trade-offs, architecture, live demo, Q&A | Both students must attend and be prepared to explain every part of the project |
+| 20 | Presentation | 5% | Twelve-slide PowerPoint and PDF deck, embedded speaker notes, 15–20 minute script, technology trade-offs, architecture, live demo, Q&A | Both students must attend and be prepared to explain every part of the project |
 | | **Total** | **100%** | | |
 
 ## Submission and defense checklist
